@@ -1,0 +1,27 @@
+body {
+  /* Sand at the bottom, open water above */
+  background: linear-gradient(180deg, var(--mantine-color-body) 55%, light-dark(#efe4c9, #1d2a33) 100%);
+  min-height: 100dvh;
+}
+
+.headline {
+  font-size: clamp(2.75rem, 9vw, 5.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  color: light-dark(var(--mantine-color-sea-7), var(--mantine-color-sea-2));
+}
+
+.map-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+.map-header {
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  background: var(--mantine-color-body);
+}
+
+.map {
+  flex: 1;
+}
