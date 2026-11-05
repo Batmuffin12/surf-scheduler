@@ -9,6 +9,8 @@
     "dev:backend": "pnpm --filter backend dev",
     "build": "pnpm -r run build",
     "lint": "pnpm -r run lint",
-    "test": "pnpm -r --if-present run test"
+    "test": "pnpm -r --if-present run test",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
   }
 }

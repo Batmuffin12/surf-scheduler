@@ -10,6 +10,10 @@ pnpm dev:backend      # backend only (GET /health)
 pnpm build            # build all workspaces
 pnpm lint             # lint all workspaces
 pnpm test             # test all workspaces
+pnpm docker:up        # start MongoDB (docker compose, needs .env)
+pnpm docker:down      # stop it (data stays in the mongo-data volume)
 ```
 
 The frontend dev server proxies `/api/*` to the backend. See `docs/SPEC.md` and `docs/openapi.yaml`.
+
+MongoDB runs in Docker (`mongo:7`, port 27017, named volume). Copy `.env.example` to `.env` first; the backend itself runs on the host.
