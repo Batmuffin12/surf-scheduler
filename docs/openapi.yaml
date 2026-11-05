@@ -48,7 +48,7 @@ paths:
           required: true
           schema:
             type: string
-            format: uuid
+            description: MongoDB ObjectId as a 24-character hex string
       responses:
         "200":
           description: The user
@@ -79,13 +79,84 @@ components:
       properties:
         id:
           type: string
-          format: uuid
+          description: MongoDB ObjectId as a 24-character hex string
         email:
           type: string
           format: email
         createdAt:
           type: string
           format: date-time
+        surfType:
+          type: string
+          enum: [SUP, WAVE, BOTH]
+        city:
+          $ref: "#/components/schemas/City"
+        maxRadiusKm:
+          type: number
+          minimum: 0
+          description: Maximum distance from the city to a candidate beach
+        schedule:
+          type: array
+          description: One entry per weekday
+          items:
+            $ref: "#/components/schemas/ScheduleEntry"
+    City:
+      type: object
+      description: The user's chosen city; the anchor point for the radius
+      required: [name, latitude, longitude]
+      properties:
+        name:
+          type: string
+          example: Tel Aviv
+        latitude:
+          type: number
+          example: 32.0853
+        longitude:
+          type: number
+          example: 34.7818
+    ScheduleEntry:
+      type: object
+      description: One weekday of the work schedule. A day off has no times. Times are Asia/Jerusalem.
+      required: [day, dayOff]
+      properties:
+        day:
+          type: string
+          enum: [SUN, MON, TUE, WED, THU, FRI, SAT]
+        dayOff:
+          type: boolean
+        start:
+          type: string
+          pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+          example: "08:00"
+        end:
+          type: string
+          pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+          example: "18:00"
+        flexHours:
+          type: number
+          minimum: 0
+    Beach:
+      type: object
+      required: [id, name, latitude, longitude, facingDegrees]
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectId as a 24-character hex string
+        name:
+          type: string
+          example: Gordon Beach
+        latitude:
+          type: number
+          example: 32.0817
+        longitude:
+          type: number
+          example: 34.7677
+        facingDegrees:
+          type: number
+          minimum: 0
+          maximum: 360
+          description: Compass bearing the beach faces seaward; used to judge wind direction
+          example: 270
     Error:
       type: object
       required: [message]

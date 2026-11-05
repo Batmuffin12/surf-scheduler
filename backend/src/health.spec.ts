@@ -1,13 +1,13 @@
 import { Test } from '@nestjs/testing'
 import { INestApplication } from '@nestjs/common'
 import request from 'supertest'
-import { AppModule } from './app.module'
+import { HealthController } from './health.controller'
 
 describe('GET /health', () => {
   let app: INestApplication
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile()
+    const moduleRef = await Test.createTestingModule({ controllers: [HealthController] }).compile()
     app = moduleRef.createNestApplication()
     await app.init()
   })

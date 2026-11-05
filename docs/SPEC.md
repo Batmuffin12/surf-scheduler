@@ -50,7 +50,7 @@ A user signs up with only an email and fills in a short profile: surf type (SUP,
 - Identity: email only, no password and no verification. Creating a user with an existing email returns a conflict (see the OpenAPI doc). Sign-in is entering the email again to look the user up. This lookup endpoint is not in the OpenAPI doc yet and must be added.
 - Data model (details to be agreed after this spec): a beaches table that already exists with data; a users table; the user–beach relation is one user to many beaches. The user's preferences relate to the beaches. Beach rows hold the data the grading needs.
 - User profile: surf type (SUP, WAVE, BOTH); weekly schedule with, per weekday, start, end and flex hours (or a non-working day); maximum radius in km.
-- Candidate beaches: the user's linked beaches that fall within the radius by haversine distance. How the links are created is out of scope. The anchor point for the radius is to be settled in the data-model ticket.
+- Candidate beaches: the user's linked beaches that fall within the radius by haversine distance. How the links are created is out of scope. The anchor point for the radius is the user's chosen city (name, latitude, longitude), stored on the user. Distance is haversine from that city to each beach.
 - Free time per day: a work block keeps its length, and its start may move in [start − flex, start + flex] with the end moving the same amount. Free time is the day minus the chosen block. The best shift per day is chosen by the recommender.
 - Holidays: Hebcal holidays always make the whole day free. There is no user toggle.
 - Session: fixed 2 hours, entirely between sunrise and sunset (from the Open-Meteo Forecast API).
@@ -82,6 +82,6 @@ A user signs up with only an email and fills in a short profile: surf type (SUP,
 Open items to settle in tickets:
 - Exact grading formula, including how to use wind direction against beach orientation.
 - Limit on the number of suggestions, and grouped vs flat display.
-- Anchor point for the radius, and the user–beach table shape.
+- Settled in issue #3: radius anchor = the user's chosen city, stored on the user. The user–beach link is its own collection (`user_beaches`, one document per user/beach pair); the schedule is embedded in the user document, one entry per weekday.
 - The sign-in-by-email endpoint, to be added to the OpenAPI doc.
 - One shared decision still pending from the skill: where specs get published. The skill mentions an issue tracker, but this repo has none set up, so the spec is in this file as CLAUDE.md says.

@@ -1,6 +1,9 @@
 packages:
   - frontend
   - backend
+allowBuilds:
+  esbuild: false
+  mongodb-memory-server: false
 minimumReleaseAgeExclude:
   - '@mantine/core@9.7.5'
   - '@mantine/hooks@9.7.5'
