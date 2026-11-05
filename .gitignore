@@ -10,3 +10,4 @@ coverage/
 .scratch/
 *.log
 *.tsbuildinfo
+.claude/worktrees/
