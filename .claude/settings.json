@@ -2,5 +2,18 @@
   "attribution": {
     "commit": "",
     "pr": ""
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r .tool_input.command); case \"$cmd\" in *\"git push\"*) git pull --rebase >&2 || exit 2;; esac"
+          }
+        ]
+      }
+    ]
   }
 }
