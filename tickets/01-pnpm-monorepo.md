@@ -6,12 +6,12 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Root workspace config covers `frontend` and `backend`; the root package is private and pins the pnpm version
-- [ ] The frontend's npm lockfile is replaced by the single root pnpm lockfile; `pnpm install` from a clean clone succeeds
-- [ ] `backend` is a minimal NestJS package that starts and answers a trivial health request
-- [ ] Root scripts: run both apps in parallel, plus build, lint and test across all workspaces
-- [ ] The frontend dev server still loads in the running app, with the existing email login and Israel map unchanged
-- [ ] The launch config and `.gitignore` match the new layout
-- [ ] A short README section documents the commands
+- [x] Root workspace config covers `frontend` and `backend`; the root package is private and pins the pnpm version
+- [x] The frontend's npm lockfile is replaced by the single root pnpm lockfile; `pnpm install` from a clean clone succeeds
+- [x] `backend` is a minimal NestJS package that starts and answers a trivial health request
+- [x] Root scripts: run both apps in parallel, plus build, lint and test across all workspaces
+- [x] The frontend dev server still loads in the running app, with the existing email login and Israel map unchanged
+- [x] The launch config and `.gitignore` match the new layout
+- [x] A short README section documents the commands
