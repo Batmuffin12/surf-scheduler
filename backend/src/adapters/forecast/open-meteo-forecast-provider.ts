@@ -1,16 +1,24 @@
 import { Injectable } from '@nestjs/common'
 import { Forecast, ForecastProvider } from './forecast-provider'
 
+import { ForecastRangeError } from './forecast-range.error'
 import { ForecastUnavailableError } from './forecast-unavailable.error'
 
-/** Extra attempts after the first one fails. */
-const RETRIES = 2
+/** Wait before each retry; one entry per retry. */
+const RETRY_DELAYS_MS = [500, 1000]
+const RETRIES = RETRY_DELAYS_MS.length
+const MAX_DAYS = 16
+const DAY_MS = 24 * 60 * 60 * 1000
 
 type Series = Record<string, (number | string | null)[]>
 
 @Injectable()
 export class OpenMeteoForecastProvider extends ForecastProvider {
   async getForecast(lat: number, lng: number, from: string, to: string): Promise<Forecast> {
+    const days = (Date.parse(to) - Date.parse(from)) / DAY_MS + 1
+    if (days > MAX_DAYS) {
+      throw new ForecastRangeError(`Forecast range of ${days} days is too long: Open-Meteo allows at most ${MAX_DAYS} days`)
+    }
     const common = { latitude: String(lat), longitude: String(lng), timezone: 'Asia/Jerusalem', start_date: from, end_date: to }
     const marine = await this.get('https://marine-api.open-meteo.com/v1/marine', {
       ...common,
@@ -47,6 +55,7 @@ export class OpenMeteoForecastProvider extends ForecastProvider {
   private async get(url: string, params: Record<string, string>): Promise<Record<string, unknown>> {
     let lastError: unknown
     for (let attempt = 0; attempt <= RETRIES; attempt++) {
+      if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt - 1]))
       try {
         const res = await fetch(`${url}?${new URLSearchParams(params)}`)
         if (!res.ok) throw new Error(`Open-Meteo request failed with status ${res.status}`)

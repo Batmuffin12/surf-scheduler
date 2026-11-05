@@ -1,3 +1,4 @@
+import { ForecastRangeError } from './forecast-range.error'
 import { ForecastUnavailableError } from './forecast-unavailable.error'
 import { OpenMeteoForecastProvider } from './open-meteo-forecast-provider'
 
@@ -40,7 +41,10 @@ function mockOpenMeteo() {
 }
 
 describe('OpenMeteoForecastProvider', () => {
-  afterEach(() => jest.restoreAllMocks())
+  afterEach(() => {
+    jest.useRealTimers()
+    jest.restoreAllMocks()
+  })
 
   it('merges marine and weather data into hourly rows plus daily sun times', async () => {
     mockOpenMeteo()
@@ -64,7 +68,10 @@ describe('OpenMeteoForecastProvider', () => {
       return marineCalls < 3 ? new Response('busy', { status: 503 }) : json(marineBody)
     })
 
-    const forecast = await new OpenMeteoForecastProvider().getForecast(32.08, 34.77, '2026-11-05', '2026-11-05')
+    jest.useFakeTimers()
+    const pending = new OpenMeteoForecastProvider().getForecast(32.08, 34.77, '2026-11-05', '2026-11-05')
+    await jest.runAllTimersAsync()
+    const forecast = await pending
 
     expect(forecast.hourly).toHaveLength(2)
     expect(fetchMock).toHaveBeenCalledTimes(4)
@@ -73,18 +80,64 @@ describe('OpenMeteoForecastProvider', () => {
   it('throws ForecastUnavailableError after the original try and 2 retries', async () => {
     const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('down', { status: 500 }))
 
-    const result = new OpenMeteoForecastProvider().getForecast(32.08, 34.77, '2026-11-05', '2026-11-05')
+    jest.useFakeTimers()
+    const result = expect(
+      new OpenMeteoForecastProvider().getForecast(32.08, 34.77, '2026-11-05', '2026-11-05'),
+    ).rejects.toBeInstanceOf(ForecastUnavailableError)
+    await jest.runAllTimersAsync()
 
-    await expect(result).rejects.toBeInstanceOf(ForecastUnavailableError)
+    await result
     expect(fetchMock).toHaveBeenCalledTimes(3)
   })
 
   it('throws ForecastUnavailableError when the network fails', async () => {
     jest.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'))
 
-    await expect(
+    jest.useFakeTimers()
+    const result = expect(
       new OpenMeteoForecastProvider().getForecast(32.08, 34.77, '2026-11-05', '2026-11-05'),
     ).rejects.toBeInstanceOf(ForecastUnavailableError)
+    await jest.runAllTimersAsync()
+
+    await result
+  })
+
+  it('waits 500 ms before the first retry and 1 s before the second', async () => {
+    const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('down', { status: 500 }))
+    jest.useFakeTimers()
+    const result = expect(
+      new OpenMeteoForecastProvider().getForecast(32.08, 34.77, '2026-11-05', '2026-11-05'),
+    ).rejects.toBeInstanceOf(ForecastUnavailableError)
+
+    await jest.advanceTimersByTimeAsync(0)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    await jest.advanceTimersByTimeAsync(499)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    await jest.advanceTimersByTimeAsync(1)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    await jest.advanceTimersByTimeAsync(999)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    await jest.advanceTimersByTimeAsync(1)
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    await result
+  })
+
+  it('accepts a range of exactly 16 days', async () => {
+    mockOpenMeteo()
+
+    await expect(
+      new OpenMeteoForecastProvider().getForecast(32.08, 34.77, '2026-11-05', '2026-11-20'),
+    ).resolves.toBeDefined()
+  })
+
+  it('rejects a range longer than 16 days with ForecastRangeError, without fetching', async () => {
+    const fetchMock = mockOpenMeteo()
+
+    const result = new OpenMeteoForecastProvider().getForecast(32.08, 34.77, '2026-11-05', '2026-11-21')
+
+    await expect(result).rejects.toBeInstanceOf(ForecastRangeError)
+    await expect(result).rejects.toThrow(/16 days/)
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it('asks Open-Meteo for the coordinate and date range in Asia/Jerusalem, hourly marine and wind plus daily sun times', async () => {
