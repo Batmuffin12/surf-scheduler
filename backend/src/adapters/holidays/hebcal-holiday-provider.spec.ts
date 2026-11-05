@@ -22,6 +22,27 @@ describe('HebcalHolidayProvider', () => {
     expect(dates).toEqual(['2026-09-12', '2026-09-21'])
   })
 
+  it('also counts Yom HaAtzma’ut as a day off, but not other modern days', async () => {
+    mockHebcal([
+      { title: 'Yom HaZikaron', date: '2026-04-21', category: 'holiday', subcat: 'modern' },
+      { title: 'Yom HaAtzma’ut', date: '2026-04-22', category: 'holiday', subcat: 'modern' },
+      { title: 'Herzl Day', date: '2026-04-27', category: 'holiday', subcat: 'modern' },
+    ])
+
+    const dates = await new HebcalHolidayProvider().getHolidayDates('2026-04-15', '2026-05-01')
+
+    expect(dates).toEqual(['2026-04-22'])
+  })
+
+  it('requests modern holidays too', async () => {
+    const fetchMock = mockHebcal([])
+
+    await new HebcalHolidayProvider().getHolidayDates('2026-04-15', '2026-05-01')
+
+    const url = new URL(String(fetchMock.mock.calls[0][0]))
+    expect(url.searchParams.get('mod')).toBe('on')
+  })
+
   it('throws when Hebcal answers with an error', async () => {
     jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('boom', { status: 503 }))
 
