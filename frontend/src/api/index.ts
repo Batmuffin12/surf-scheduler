@@ -1,5 +1,5 @@
 import { apiClient as defaultClient } from './client.ts'
-import { MOCK_BEACHES, MOCK_PROFILE, mockGrade, mockSuggestions, mockUserId } from './mockData.ts'
+import { findMockUser, MOCK_BEACHES, MOCK_PROFILE, mockGrade, mockSuggestions, mockUserId, saveMockUser } from './mockData.ts'
 import type { BeachGrade, Profile, Suggestion, User } from './types.ts'
 
 export type * from './types.ts'
@@ -39,12 +39,33 @@ export function createApi({ useMocks, mockDelayMs = 300, client = defaultClient 
     async signIn(email: string): Promise<User> {
       if (useMocks) {
         await delay()
-        return { id: mockUserId(email), email, createdAt: new Date().toISOString() }
+        // Mimics the backend's 400 for a malformed email
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          throw new ApiRequestError(400, 'Enter a valid email address, like you@example.com')
+        }
+        const existing = findMockUser(mockUserId(email))
+        if (existing) return existing
+        const user = { id: mockUserId(email), email, createdAt: new Date().toISOString() }
+        saveMockUser(user)
+        return user
       }
       const { data, error, response } = await client.POST('/users', { body: { email } })
       if (data) return data
       // 409: the email exists, so this is a returning user. Looking them up needs issue #6.
       if (response.status === 409) throw new NotAvailableYetError('Signing in with an existing email')
+      throw new ApiRequestError(response.status, error?.message ?? `Server answered ${response.status}`)
+    },
+
+    /** Load a signed-in user by id, e.g. after a page reload. Rejects with status 404 if unknown. */
+    async getUser(userId: string): Promise<User> {
+      if (useMocks) {
+        await delay()
+        const user = findMockUser(userId)
+        if (!user) throw new ApiRequestError(404, 'No such user')
+        return user
+      }
+      const { data, error, response } = await client.GET('/users/{userId}', { params: { path: { userId } } })
+      if (data) return data
       throw new ApiRequestError(response.status, error?.message ?? `Server answered ${response.status}`)
     },
 
@@ -87,3 +108,5 @@ export function createApi({ useMocks, mockDelayMs = 300, client = defaultClient 
 
 /** The API the app uses. `pnpm dev:mock` (VITE_USE_MOCKS=true) answers everything with mock data. */
 export const api = createApi({ useMocks: import.meta.env.VITE_USE_MOCKS === 'true' })
+
+export type Api = ReturnType<typeof createApi>

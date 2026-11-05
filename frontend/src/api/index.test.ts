@@ -12,6 +12,24 @@ describe('mock mode', () => {
     expect(user.id).toBeTruthy()
   })
 
+  test('a signed-in user can be loaded by id after a page reload', async () => {
+    const user = await api.signIn('returning@example.com')
+    const afterReload = createApi({ useMocks: true, mockDelayMs: 0 })
+
+    expect(await afterReload.getUser(user.id)).toEqual(user)
+  })
+
+  test('loading an unknown user id answers 404', async () => {
+    await expect(api.getUser('00000000-0000-4000-8000-000000000000')).rejects.toMatchObject({ status: 404 })
+  })
+
+  test('signing in with a malformed email is rejected with a message to show', async () => {
+    const attempt = api.signIn('surfer.example.com')
+
+    await expect(attempt).rejects.toBeInstanceOf(ApiRequestError)
+    await expect(attempt).rejects.toThrow('Enter a valid email address, like you@example.com')
+  })
+
   test('beach grades are whole numbers from 1 to 10 and change over time', async () => {
     const morning = await api.getBeachGrades('user-1', '2026-11-06T08:00:00+02:00')
     const evening = await api.getBeachGrades('user-1', '2026-11-06T16:00:00+02:00')
@@ -83,5 +101,21 @@ describe('real mode', () => {
 
     await expect(attempt).rejects.toBeInstanceOf(ApiRequestError)
     await expect(attempt).rejects.toThrow('email must be a valid email address')
+  })
+
+  test('loading a user by id sends GET /users/{id}', async () => {
+    const user = { id: '3f1c2a7e-9b4d-4e8a-a1c2-5d6e7f8a9b0c', email: 'surfer@example.com', createdAt: '2026-11-05T09:00:00Z' }
+    const { api, fetch } = apiAnswering(200, user)
+
+    expect(await api.getUser(user.id)).toEqual(user)
+    const request = fetch.mock.calls[0][0]
+    expect(request.method).toBe('GET')
+    expect(request.url).toBe(`http://localhost/api/users/${user.id}`)
+  })
+
+  test('loading an unknown user id rejects with status 404', async () => {
+    const { api } = apiAnswering(404, { message: 'User not found' })
+
+    await expect(api.getUser('3f1c2a7e-9b4d-4e8a-a1c2-5d6e7f8a9b0c')).rejects.toMatchObject({ status: 404 })
   })
 })

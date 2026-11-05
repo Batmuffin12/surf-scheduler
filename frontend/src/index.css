@@ -8,6 +8,7 @@ body {
   font-size: clamp(2.75rem, 9vw, 5.5rem);
   line-height: 0.95;
   letter-spacing: -0.03em;
+  text-wrap: balance;
   color: light-dark(var(--mantine-color-sea-7), var(--mantine-color-sea-2));
 }
 

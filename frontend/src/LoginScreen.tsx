@@ -1,13 +1,36 @@
 import { Button, Container, Stack, Text, TextInput, Title } from '@mantine/core'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { ApiRequestError } from './api/index.ts'
 
-// Hackathon prototype: no registration or auth. The email is only used to say who is "logged in".
-export function LoginScreen({ onLogin }: { onLogin: (email: string) => void }) {
+// No passwords: an email signs you in, or creates your account the first time.
+export function LoginScreen({ onSubmit }: { onSubmit: (email: string) => Promise<void> }) {
   const [email, setEmail] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const emailField = useRef<HTMLInputElement>(null)
 
-  function handleSubmit(event: FormEvent) {
+  // Move focus to the field when an error appears, so screen readers read it out
+  useEffect(() => {
+    if (error) emailField.current?.focus()
+  }, [error])
+
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    onLogin(email.trim())
+    setError(null)
+    setBusy(true)
+    try {
+      await onSubmit(email.trim())
+    } catch (err) {
+      if (err instanceof ApiRequestError) {
+        setError(err.message)
+      } else {
+        // Server down, or the endpoint isn't built yet: the details are for developers
+        console.error(err)
+        setError('Couldn’t reach the server. Try again in a moment.')
+      }
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
@@ -23,18 +46,21 @@ export function LoginScreen({ onLogin }: { onLogin: (email: string) => void }) {
         <form onSubmit={handleSubmit}>
           <Stack gap="sm" maw={420}>
             <TextInput
+              ref={emailField}
               label="Email"
               type="email"
               name="email"
               autoComplete="email"
+              spellCheck={false}
               placeholder="you@example.com"
               required
               value={email}
               onChange={(e) => setEmail(e.currentTarget.value)}
+              error={error}
               size="md"
             />
-            <Button type="submit" size="md">
-              Log in
+            <Button type="submit" size="md" loading={busy}>
+              Continue
             </Button>
           </Stack>
         </form>

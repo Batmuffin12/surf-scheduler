@@ -1,4 +1,4 @@
-import type { Beach, Profile, Suggestion } from './types.ts'
+import type { Beach, Profile, Suggestion, User } from './types.ts'
 
 // Real Israeli beaches, north to south
 export const MOCK_BEACHES: Beach[] = [
@@ -74,4 +74,30 @@ export function mockSuggestions(now: Date): Suggestion[] {
   }
 
   return suggestions.sort((a, b) => b.grade - a.grade).slice(0, MAX_MOCK_SUGGESTIONS)
+}
+
+// Mock "users table", kept in localStorage so a signed-in user survives a page reload.
+// Storage can be unavailable (private mode); then users only last for this page.
+const MOCK_USERS_KEY = 'surf-scheduler:mock-users'
+const memoryUsers: Record<string, User> = {}
+
+function readMockUsers(): Record<string, User> {
+  try {
+    return { ...memoryUsers, ...JSON.parse(localStorage.getItem(MOCK_USERS_KEY) ?? '{}') }
+  } catch {
+    return { ...memoryUsers }
+  }
+}
+
+export function findMockUser(id: string): User | undefined {
+  return readMockUsers()[id]
+}
+
+export function saveMockUser(user: User): void {
+  memoryUsers[user.id] = user
+  try {
+    localStorage.setItem(MOCK_USERS_KEY, JSON.stringify({ ...readMockUsers(), [user.id]: user }))
+  } catch {
+    // Not critical in mock mode
+  }
 }
