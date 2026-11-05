@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common'
+import { HolidaysModule } from './adapters/holidays/holidays.module'
 import { HealthController } from './health.controller'
 
-@Module({ controllers: [HealthController] })
+@Module({ imports: [HolidaysModule], controllers: [HealthController] })
 export class AppModule {}
