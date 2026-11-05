@@ -4,6 +4,7 @@ import { HolidaysModule } from './adapters/holidays/holidays.module'
 import { BeachesModule } from './beaches/beaches.module'
 import { DatabaseModule } from './database/database.module'
 import { HealthController } from './health.controller'
+import { RadiusModule } from './radius/radius.module'
 import { UserBeachesModule } from './user-beaches/user-beaches.module'
 import { UsersModule } from './users/users.module'
 
@@ -13,6 +14,7 @@ import { UsersModule } from './users/users.module'
     UsersModule,
     BeachesModule,
     UserBeachesModule,
+    RadiusModule,
     ForecastModule,
     HolidaysModule,
   ],
