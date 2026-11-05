@@ -29,6 +29,10 @@ export class UsersService {
     return this.users.findById(id).lean().exec()
   }
 
+  async findByEmail(email: string) {
+    return this.users.findOne({ email: email.trim().toLowerCase() }).lean().exec()
+  }
+
   async findAll() {
     return this.users.find().lean().exec()
   }
