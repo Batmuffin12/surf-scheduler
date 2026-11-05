@@ -1,5 +1,6 @@
-import { BadRequestException, Body, Controller, Get, NotFoundException, Param, Post, Query } from '@nestjs/common'
+import { BadRequestException, Body, Controller, Get, NotFoundException, Param, Post, Put, Query } from '@nestjs/common'
 import { isValidObjectId } from 'mongoose'
+import { parseProfile } from './profile-validation'
 import { User } from './user.schema'
 import { UsersService } from './users.service'
 
@@ -7,7 +8,15 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /** The API shape of a user (docs/openapi.yaml `User`). */
 function toApiUser(user: User & { _id: unknown }) {
-  return { id: String(user._id), email: user.email, createdAt: user.createdAt }
+  return {
+    id: String(user._id),
+    email: user.email,
+    createdAt: user.createdAt,
+    surfType: user.surfType,
+    city: user.city,
+    maxRadiusKm: user.maxRadiusKm,
+    schedule: user.schedule,
+  }
 }
 
 function validEmail(value: unknown): string {
@@ -28,6 +37,14 @@ export class UsersController {
   @Get()
   async findByEmail(@Query('email') email?: unknown) {
     const user = await this.users.findByEmail(validEmail(email))
+    if (!user) throw new NotFoundException('No such user')
+    return toApiUser(user)
+  }
+
+  @Put(':id/profile')
+  async saveProfile(@Param('id') id: string, @Body() body: unknown) {
+    const profile = parseProfile(body)
+    const user = isValidObjectId(id) ? await this.users.updateProfile(id, profile) : null
     if (!user) throw new NotFoundException('No such user')
     return toApiUser(user)
   }

@@ -93,8 +93,70 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /users/{userId}/profile:
+    put:
+      operationId: saveProfile
+      summary: Save the user's surf profile (replaces the whole profile)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: MongoDB ObjectId as a 24-character hex string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Profile"
+      responses:
+        "200":
+          description: The user with the saved profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: >
+            Invalid profile. The message names the broken rule: unknown surfType; city without name,
+            latitude and longitude; maxRadiusKm outside 0 to 100; schedule not exactly one entry per weekday;
+            a working day whose start or end is not a whole hour, whose end is not after its start
+            (no block crosses midnight), or whose flexHours is not a whole number from 0 to 3;
+            a day off that carries times.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: No such user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
 components:
   schemas:
+    Profile:
+      type: object
+      required: [surfType, city, maxRadiusKm, schedule]
+      properties:
+        surfType:
+          type: string
+          enum: [SUP, WAVE, BOTH]
+        city:
+          $ref: "#/components/schemas/City"
+        maxRadiusKm:
+          type: number
+          minimum: 0
+          maximum: 100
+        schedule:
+          type: array
+          description: Exactly seven entries, one per weekday, in any order
+          minItems: 7
+          maxItems: 7
+          items:
+            $ref: "#/components/schemas/ScheduleEntry"
     CreateUserRequest:
       type: object
       required: [email]
@@ -124,6 +186,7 @@ components:
         maxRadiusKm:
           type: number
           minimum: 0
+          maximum: 100
           description: Maximum distance from the city to a candidate beach
         schedule:
           type: array
@@ -146,7 +209,11 @@ components:
           example: 34.7818
     ScheduleEntry:
       type: object
-      description: One weekday of the work schedule. A day off has no times. Times are Asia/Jerusalem.
+      description: |
+        One weekday of the work schedule. A day off has no times (start, end and flexHours may be
+        omitted or null in a request; they are absent in responses). On a working day start and end
+        are whole hours (HH:00), end is after start (no block crosses midnight), and flexHours is a
+        whole number from 0 to 3 (defaults to 0). Times are Asia/Jerusalem.
       required: [day, dayOff]
       properties:
         day:
@@ -155,16 +222,20 @@ components:
         dayOff:
           type: boolean
         start:
+          nullable: true
           type: string
           pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
           example: "08:00"
         end:
+          nullable: true
           type: string
           pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
           example: "18:00"
         flexHours:
-          type: number
+          nullable: true
+          type: integer
           minimum: 0
+          maximum: 3
     Beach:
       type: object
       required: [id, name, latitude, longitude, facingDegrees]

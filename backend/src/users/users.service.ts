@@ -38,6 +38,9 @@ export class UsersService {
   }
 
   async updateProfile(id: string, profile: UserProfile) {
-    await this.users.updateOne({ _id: id }, { $set: profile }, { runValidators: true }).exec()
+    return this.users
+      .findByIdAndUpdate(id, { $set: profile }, { runValidators: true, new: true })
+      .lean()
+      .exec()
   }
 }
