@@ -48,32 +48,45 @@ export function mockGrade(beach: Beach, at: Date): { type: 'SUP' | 'WAVE'; grade
 }
 
 const HOUR = 60 * 60 * 1000
-const MAX_MOCK_SUGGESTIONS = 10
+const MAX_MOCK_SUGGESTIONS = 5 // the backend's default limit (#13)
 
 function israelHour(date: Date): number {
   return Number(new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hourCycle: 'h23', timeZone: 'Asia/Jerusalem' }).format(date))
 }
 
-/** 2-hour daylight sessions (06:00-16:00 Israel time) at every beach in the next 3 days, best first. */
+/** Same day in Israel, as YYYY-MM-DD */
+function israelDay(date: Date): string {
+  return date.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' })
+}
+
+/**
+ * Mimics GET /recommendation (#13): 2-hour daylight sessions (06:00-16:00 Israel time) in the next 3 days,
+ * at most one per beach per day (its best window), best grade first, ties by earlier start then beach name.
+ */
 export function mockSuggestions(now: Date): Suggestion[] {
   const horizonEnd = now.getTime() + 72 * HOUR
   const firstStart = Math.ceil(now.getTime() / HOUR) * HOUR
-  const suggestions: Suggestion[] = []
+  const bestPerBeachDay = new Map<string, Suggestion>()
 
   for (let start = firstStart; start + 2 * HOUR <= horizonEnd; start += 2 * HOUR) {
     const hour = israelHour(new Date(start))
     if (hour < 6 || hour > 14) continue
     for (const beach of MOCK_BEACHES) {
-      suggestions.push({
+      const suggestion: Suggestion = {
         beach,
         start: new Date(start).toISOString(),
         end: new Date(start + 2 * HOUR).toISOString(),
         ...mockGrade(beach, new Date(start)),
-      })
+      }
+      const key = `${beach.id} ${israelDay(new Date(start))}`
+      const best = bestPerBeachDay.get(key)
+      if (!best || suggestion.grade > best.grade) bestPerBeachDay.set(key, suggestion)
     }
   }
 
-  return suggestions.sort((a, b) => b.grade - a.grade).slice(0, MAX_MOCK_SUGGESTIONS)
+  return [...bestPerBeachDay.values()]
+    .sort((a, b) => b.grade - a.grade || a.start.localeCompare(b.start) || a.beach.name.localeCompare(b.beach.name))
+    .slice(0, MAX_MOCK_SUGGESTIONS)
 }
 
 // Mock "users table", kept in localStorage so a signed-in user survives a page reload.

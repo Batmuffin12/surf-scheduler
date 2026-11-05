@@ -26,3 +26,94 @@ body {
 .map {
   flex: 1;
 }
+
+/* Map beside the suggestions panel; on phones the panel sits under the map */
+.map-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.suggestions {
+  width: 360px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-left: 1px solid var(--mantine-color-default-border);
+  background: var(--mantine-color-body);
+}
+
+@media (max-width: 48em) {
+  .map-body {
+    flex-direction: column;
+  }
+
+  .suggestions {
+    width: auto;
+    max-height: 50%;
+    padding-bottom: calc(var(--mantine-spacing-md) + env(safe-area-inset-bottom));
+    border-left: 0;
+    border-top: 1px solid var(--mantine-color-default-border);
+  }
+}
+
+.suggestion-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xs);
+}
+
+.suggestion {
+  display: block;
+  width: 100%;
+  padding: var(--mantine-spacing-sm);
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-md);
+  transition: background-color 120ms, border-color 120ms;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent; /* :active below gives the tap feedback */
+}
+
+.suggestion:active {
+  background: var(--mantine-color-default-hover);
+  border-color: var(--mantine-color-sea-5);
+}
+
+/* Lets a very long beach name wrap instead of pushing the grade out */
+.suggestion-place {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.suggestion:hover {
+  background: var(--mantine-color-default-hover);
+}
+
+.suggestion:focus-visible {
+  outline: 2px solid var(--mantine-color-sea-5);
+  outline-offset: 2px;
+}
+
+.suggestion[aria-current='true'] {
+  border-color: var(--mantine-color-sea-5);
+  background: light-dark(var(--mantine-color-sea-0), rgba(42, 134, 176, 0.15));
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.grade[data-grade='high'] {
+  color: light-dark(var(--mantine-color-teal-8), var(--mantine-color-teal-4));
+}
+
+.grade[data-grade='mid'] {
+  color: light-dark(var(--mantine-color-sea-7), var(--mantine-color-sea-3));
+}
+
+.grade[data-grade='low'] {
+  color: var(--mantine-color-dimmed);
+}

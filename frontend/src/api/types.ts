@@ -40,3 +40,9 @@ export type Suggestion = {
   type: 'SUP' | 'WAVE'
   grade: number // integer 1-10
 }
+
+/** Reply of GET /recommendation. `message` explains an empty list, e.g. "No good sessions in the next 3 days." */
+export type SuggestionList = {
+  suggestions: Suggestion[]
+  message?: string
+}

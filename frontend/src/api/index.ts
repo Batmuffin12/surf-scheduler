@@ -1,6 +1,6 @@
 import { apiClient as defaultClient } from './client.ts'
 import { findMockUser, MOCK_BEACHES, MOCK_PROFILE, mockGrade, mockSuggestions, mockUserId, saveMockUser } from './mockData.ts'
-import type { BeachGrade, Profile, Suggestion, User } from './types.ts'
+import type { BeachGrade, Profile, SuggestionList, User } from './types.ts'
 
 export type * from './types.ts'
 
@@ -95,11 +95,15 @@ export function createApi({ useMocks, mockDelayMs = 300, client = defaultClient 
       throw new NotAvailableYetError('Beach grades')
     },
 
-    /** Best 2-hour sessions in the next 3 days, best grade first. */
-    async getSuggestions(_userId: string, now = new Date()): Promise<Suggestion[]> {
+    /**
+     * Best 2-hour sessions in the next 3 days, best grade first (GET /recommendation, #13).
+     * An empty list may come with a `message` to show. Rejects with status 503 when forecast data
+     * is unavailable and 422 when the profile is incomplete.
+     */
+    async getSuggestions(_userId: string, now = new Date()): Promise<SuggestionList> {
       if (useMocks) {
         await delay()
-        return mockSuggestions(now)
+        return { suggestions: mockSuggestions(now) }
       }
       throw new NotAvailableYetError('Suggestions')
     },

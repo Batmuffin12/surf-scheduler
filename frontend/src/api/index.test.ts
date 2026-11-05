@@ -59,7 +59,7 @@ describe('mock mode', () => {
 
   test('suggestions are 2-hour sessions in the next 3 days, best grade first', async () => {
     const now = new Date('2026-11-06T07:00:00+02:00')
-    const suggestions = await api.getSuggestions('user-1', now)
+    const { suggestions } = await api.getSuggestions('user-1', now)
 
     expect(suggestions.length).toBeGreaterThan(0)
     const grades = suggestions.map((s) => s.grade)
@@ -68,6 +68,27 @@ describe('mock mode', () => {
       expect(new Date(s.end).getTime() - new Date(s.start).getTime()).toBe(2 * 60 * 60 * 1000)
       expect(new Date(s.start) >= now).toBe(true)
       expect(new Date(s.end) <= new Date('2026-11-09T07:00:00+02:00')).toBe(true)
+    }
+  })
+
+  // Rules from #13: at most 5, one per beach per day, ties by earlier start then beach name
+  test('suggestions are at most 5, with each beach at most once per day', async () => {
+    const { suggestions } = await api.getSuggestions('user-1', new Date('2026-11-06T07:00:00+02:00'))
+
+    expect(suggestions).toHaveLength(5)
+    const israelDay = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' })
+    const beachDays = suggestions.map((s) => `${s.beach.id} ${israelDay(s.start)}`)
+    expect(new Set(beachDays).size).toBe(beachDays.length)
+  })
+
+  test('suggestions with equal grades are ordered by earlier start, then beach name', async () => {
+    const { suggestions } = await api.getSuggestions('user-1', new Date('2026-11-06T07:00:00+02:00'))
+
+    for (let i = 1; i < suggestions.length; i++) {
+      const [a, b] = [suggestions[i - 1], suggestions[i]]
+      if (a.grade !== b.grade) continue
+      const order = a.start === b.start ? a.beach.name.localeCompare(b.beach.name) : a.start.localeCompare(b.start)
+      expect(order).toBeLessThan(0)
     }
   })
 })

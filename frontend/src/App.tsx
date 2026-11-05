@@ -67,7 +67,7 @@ export default function App({ api = defaultApi }: { api?: Api }) {
         </Center>
       )
     case 'signedIn':
-      return <MapScreen email={session.user.email} onLogout={signOut} />
+      return <MapScreen api={api} user={session.user} onLogout={signOut} />
     case 'signedOut':
       return <LoginScreen onSubmit={signIn} />
   }
